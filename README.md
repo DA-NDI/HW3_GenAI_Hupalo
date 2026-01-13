@@ -1,12 +1,11 @@
----
 
-# 🇺🇦 ZNO Solver
+# 🇺🇦 ZNO Solver (Offline AI)
 
 This project solves Ukrainian ZNO (university entrance exam) questions using a fine-tuned LLM that runs **completely offline**.
 
 It uses a "Teacher-Student" approach: we used a big model (Gemini 2.0) to generate reasoning data, and then taught a smaller model (Qwen 2.5 7B) to think like the teacher.
 
-### Results
+### 🏆 Results
 
 * **Base Model:** Qwen 2.5-7B-Instruct
 * **Method:** LoRA Fine-Tuning + Logit Scoring
@@ -14,7 +13,7 @@ It uses a "Teacher-Student" approach: we used a big model (Gemini 2.0) to genera
 
 ---
 
-## Pipeline
+## 🛠️ How It Works (The Pipeline)
 
 ### Phase 1: The "Teacher" (Data Generation)
 
@@ -42,7 +41,7 @@ The competition forbids internet access.
 
 ---
 
-## Reproduction
+## 🚀 How to Run (Reproduction)
 
 ### 1. Training (Phase 1 & 2)
 
