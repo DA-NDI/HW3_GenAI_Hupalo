@@ -1,8 +1,6 @@
-Here is a clean, simple `README.md` for your GitHub repository. It explains the project in plain English so anyone (including recruiters or professors) can understand what you built.
-
 ---
 
-# 🇺🇦 ZNO Solver (Offline AI)
+# 🇺🇦 ZNO Solver
 
 This project solves Ukrainian ZNO (university entrance exam) questions using a fine-tuned LLM that runs **completely offline**.
 
