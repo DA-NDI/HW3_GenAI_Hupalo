@@ -1,98 +1,98 @@
 
-# 🇺🇦 ZNO Solver
 
-This project solves Ukrainian ZNO (university entrance exam) questions using a fine-tuned LLM that runs **completely offline**.
+### README.md
 
-It uses a "Teacher-Student" approach: we used a big model (Gemini 2.0) to generate reasoning data, and then taught a smaller model (Qwen 2.5 7B) to think like the teacher.
+```markdown
+# 🇺🇦 ZNO Solver: Teacher-Student Reasoning Approach
+
+This project solves Ukrainian ZNO (university entrance exam) questions using a fine-tuned LLM that runs **completely offline** within Kaggle's restricted environment.
+
+It uses a "Teacher-Student" approach: we used a high-reasoning model (Gemini) to generate a "Chain-of-Thought" dataset, which was then used to fine-tune a smaller model (Qwen 2.5 7B) to achieve high performance with limited resources.
 
 ### Results
-
 * **Base Model:** Qwen 2.5-7B-Instruct
 * **Method:** LoRA Fine-Tuning + Logit Scoring
-* **Target Score:** ~0.50+ accuracy (Beating the text-only baseline of 0.34)
+* **Performance:** Optimized for accuracy using probability distribution over Cyrillic tokens (А, Б, В, Г, Д).
 
 ---
 
-## The Pipeline
+##  The Pipeline
 
 ### Phase 1: The "Professor" (Data Generation)
-
-We took the raw ZNO training questions and asked **Gemini 3.0 Flash Preview** to explain the answers.
-
-* **Input:** Question + Options
-* **Output:** Reasoning ("Chain of Thought") + Correct Letter
-* **Result:** A dataset of ~3,000 examples where the AI explains *why* an answer is right.
+ took the raw ZNO training questions and utilized **Gemini 1.5/2.0** to generate explanations.
+* **Script:** `generate_gemini.py`
+* **Output:** `zno_gemini_reasoning.jsonl` (Explanations + Correct Answers)
 
 ### Phase 2: The "Student" (Fine-Tuning)
-
-We trained a lightweight adapter (LoRA) for **Qwen 2.5 7B**.
-
-* **Goal:** Teach Qwen to mimic Gemini's reasoning style.
-* **Hardware:** T4 x2 or P100 GPU.
-* **Outcome:** A small `adapter_model` file (~200MB) that makes Qwen smarter at ZNO.
+ trained a LoRA adapter to teach Qwen to mimic the "Chain-of-Thought" reasoning style.
+* **Notebook:** `full_code_hw3.ipynb`
+* **Adapter:** `zno-my-adapter/` (Weights stored via Git LFS)
 
 ### Phase 3: The "Exam" (Offline Inference)
-
-The competition forbids internet access.
-
-* **Challenge:** Installing libraries (`bitsandbytes`, `peft`) without `pip install`.
-* **Solution:** To download all Python wheels into a zip file (`offline_libs.zip`) and install them locally.
-* **Strategy:** To use **Logit Scoring**. Instead of asking the model to write text (which can be messy), it mathematically calculate the probability of letters **А, Б, В, Г, Д**. The letter with the highest % wins.
+To comply with competition rules (no internet), we use a local installation strategy.
+* **Library Prep:** Dependencies are bundled in `offline_libs.zip`.
+* **Strategy:** **Logit Scoring**. Instead of text generation, we calculate the mathematical probability of the letters **А, Б, В, Г, Д** at the final token position.
 
 ---
 
-## Reproduction
-
-### 1. Training (Phase 1 & 2)
-
-Run the `train.py` (or notebook) to generate the adapter.
-
-* *Input:* `zno.train.jsonl`
-* *Output:* `zno-my-adapter/` folder
-
-### 2. Prepare Offline Libraries (Phase 3)
-
-Run the script to download dependencies:
-
-```bash
-pip download -d offline_libs --no-deps bitsandbytes peft accelerate transformers tokenizers safetensors sentencepiece
-zip -r offline_libs.zip offline_libs
-
-```
-
-### 3. Kaggle Submission (Phase 4)
-
-1. **Upload Datasets to Kaggle:**
-* `zno-libs-final` (Your `offline_libs.zip`)
-* `zno-my-adapter` (Your trained folder)
-
-
-2. **Add Base Model:** Search and add `Qwen/Qwen2.5-7B-Instruct`.
-3. **Run Inference:** Use the code in `submission.ipynb`.
-* **Config:** `BATCH_SIZE = 1` (For stability on P100 GPU for Kaggle).
-* **Prompt:** Uses the specific instruction *"Дай відповідь буквою-варіантом..."* from the [UNLP 2025 Paper](https://aclanthology.org/2025.unlp-1.2.pdf).
-
-
-
----
-
-## 📂 File Structure
+## Project Structure
 
 ```text
-├── train_pipeline/
-│   ├── 1_generate_reasoning.py   # Ask Gemini to explain answers
-│   └── 2_finetune_qwen.py        # Train Qwen with LoRA
-├── offline_utils/
-│   └── download_wheels.sh        # Script to get libraries for offline use
-├── submission/
-│   └── main_inference.ipynb      # The final code for Kaggle (Logit Scoring)
+.
+├── zno-my-adapter/          # Fine-tuned LoRA weights (Git LFS)
+├── offline_libs.zip         # Pre-downloaded Python wheels for Kaggle
+├── full_code_hw3.ipynb      # Main training & experimentation notebook
+├── report.ipynb             # Final analysis and metrics
+├── generate_gemini.py       # Dataset generation script (Teacher phase)
+├── zno_gemini_reasoning.py  # Utility for processing teacher data
+├── zno_gemini_reasoning.jsonl # The generated "Chain-of-Thought" dataset
+├── EXPERIMENT_REPORT.md     # Detailed breakdown of training runs
 └── README.md
 
 ```
 
-## Credits
+---
+
+##  Reproduction & Kaggle Deployment
+
+### 1. Git LFS Setup
+
+The model weights and library zip exceed GitHub's standard size limit.
+
+```bash
+git lfs install
+git lfs track "*.zip"
+git lfs track "*.safetensors"
+
+```
+
+### 2. Kaggle Setup (Phase 4)
+
+1. **Upload Datasets:** * Create a dataset `zno-libs-final` and upload `offline_libs.zip`.
+* Create a dataset `zno-my-adapter` and upload the contents of your adapter folder.
+
+
+2. **Add Base Model:** Search Kaggle Models for `Qwen2.5-7B-Instruct`.
+3. **Run Solver:** Use `zno-solver-offline (1).ipynb`.
+* **Inference Strategy:** Uses **Logit Scoring** on Cyrillic markers.
+* **Prompting:** Implements the *"Дай відповідь буквою-варіантом..."* instruction optimized for Ukrainian multiple-choice tasks.
+
+
+
+---
+
+## 📜 Credits & References
 
 Based on the methodology from **"Benchmarking Multimodal Models for Ukrainian Language Understanding"**.
 
-* **Lecture/Paper:** Paniv et al., UNLP 2025.
-* **Key Insight:** Logit scoring on Cyrillic tokens outperforms text generation for multiple-choice QA.
+* **Source:** Paniv et al., UNLP 2025.
+* **Key Insight:** Logit scoring on Cyrillic tokens outperforms text generation for multiple-choice QA in low-resource settings.
+
+```
+
+
+```
+
+
+
+**Would you like me to help you draft the `EXPERIMENT_REPORT.md` content based on your training results?**
